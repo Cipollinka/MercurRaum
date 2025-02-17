@@ -147,9 +147,8 @@ const HomeScreen = () => {
     <View style={{
       flex: 1,
       alignItems: 'center',
-      backgroundColor: '#022451',
     }}>
-
+      <Image source={require('../assets/images/bg.png')} style={{position:'absolute', width:'100%', height:'100%', flex:1}} />
       {selectedScreen === 'Home' ? (
         <SafeAreaView style={{
           flex: 1,
