@@ -1,5 +1,5 @@
 import React from 'react';
-import AppManager from './src/AppManager';
+import AppManager from './src/AppManager/AppManager';
 
 function App() {
   return <AppManager />;

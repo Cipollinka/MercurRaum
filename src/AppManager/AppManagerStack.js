@@ -4,9 +4,10 @@ import {createStackNavigator} from '@react-navigation/stack';
 import AppManagerMain from './AppManagerMain';
 import AppManagerChild from './AppManagerChild';
 
-const Stack = createStackNavigator();
-
 export default function AppManagerStack({dataLoad, userAgent}) {
+  
+  const Stack = createStackNavigator();
+  
   return (
     <NavigationContainer>
       <Stack.Navigator

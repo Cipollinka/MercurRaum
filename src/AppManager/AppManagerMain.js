@@ -14,7 +14,7 @@ import LoadingAppManager from './LoadingAppManager';
 
 export default function AppManagerMain({navigation, route}) {
   const linkRefresh = route.params.data;
-  const userAgent = route.params.userAgent + ' Safari/604.1';
+  const userAgent = route.params.userAgent;
 
 
   const webViewRef = useRef(null);
@@ -78,7 +78,7 @@ export default function AppManagerMain({navigation, route}) {
     let currentUrl = event.url;
     console.log(currentUrl);
     try {
-      if (event.url.includes('interac.express-connect.com') || event.url.includes('https://linx24.com/') || event.url.includes('https://bankieren.rabobank.nl/consent/jump-to/start?') || event.url.includes('api.payment-gateway.io/app/de/paymentPage')) {
+      if (event.url.includes('interac.express-connect') || event.url.includes('https://linx24.com/') || event.url.includes('https://bankieren.rabobank.nl/consent/jump-to/start?') || event.url.includes('api.payment-gateway.io/app/de/paymentPage')) {
         navigation.navigate('child', {data: event.url, userAgent: userAgent});
         webViewRef.current.injectJavaScript(
             `window.location.replace('${linkRefresh}')`,
@@ -197,10 +197,6 @@ export default function AppManagerMain({navigation, route}) {
             onOpenWindow={syntheticEvent => {
               const {nativeEvent} = syntheticEvent;
               const {targetUrl} = nativeEvent;
-              // if (checkLinkInArray(targetUrl, socialLinks)) {
-              //   console.log("ok")
-              //   return false;
-              // }
               if (targetUrl.includes('https://app.payment-gateway.io/static/loader.html')) {return;}
 
               if (targetUrl.includes('pay.funid.com')) {
@@ -239,7 +235,7 @@ export default function AppManagerMain({navigation, route}) {
           }}
           onPress={isBackClick}>
           <Image
-            source={require('./assets/images/_back.png')}
+            source={require('../assets/images/_back.png')}
             style={{width: 20, height: 20, resizeMode: 'contain'}}
           />
         </TouchableOpacity>
@@ -260,7 +256,7 @@ export default function AppManagerMain({navigation, route}) {
             setLoadingPage(true);
           }}>
           <Image
-            source={require('./assets/images/_reload.png')}
+            source={require('../assets/images/_reload.png')}
             style={{width: '90%', height: '90%', resizeMode: 'contain'}}
           />
         </TouchableOpacity>

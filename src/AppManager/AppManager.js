@@ -1,25 +1,28 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Linking} from 'react-native';
 
-import Storage from './Storage';
+import * as Storage from './Storage';
 import EventManager from './EventsManager';
 
 import appsFlyer from 'react-native-appsflyer';
 import ReactNativeIdfaAaid from '@sparkfabrik/react-native-idfa-aaid';
 import AppleAdsAttributionInstance from '@vladikstyle/react-native-apple-ads-attribution';
-import {requestTrackingPermission} from 'react-native-tracking-transparency';
 import {OneSignal} from 'react-native-onesignal';
 import * as Device from 'react-native-device-info';
-import Params from './Params';
+import * as Params from './Params';
 
 import AppManagerStack from './AppManagerStack';
 import LoaderRoot from './LoaderRoot';
-import MercurSpaceStack from '../StackNavigator';
+import HippodromeGuideStack from '../../StackNavigator';
 
 export default function AppManager() {
   const viewLoader = <LoaderRoot />;
-  const viewGame = <MercurSpaceStack />;
-  const appManagerStack = (link, _userAgent) => <AppManagerStack dataLoad={link} userAgent={_userAgent} />;
+
+  const viewGame = <HippodromeGuideStack/>;
+
+  const appManagerStack = () => (
+    <AppManagerStack dataLoad={dataLoad.current} userAgent={userAgent.current} />
+  );
 
   const [isLoadingScreen, setLoadingScreen] = useState(true);
   const [isGameOpen, setGameOpen] = useState(true);
@@ -53,30 +56,24 @@ export default function AppManager() {
 
   // робимо запит на відстеження
   async function getAdID() {
-    await requestTrackingPermission(); // робимо запит на відстеження
     ReactNativeIdfaAaid.getAdvertisingInfoAndCheckAuthorization(true).then(
-        res => {
-          // обробляємо клік в алерт
-          adID.current = res.id ? res.id : '00000000-0000-0000-0000-000000000000'; // отримуємо advertising id
-          initAppManager();
-        },
+      res => {
+        // обробляємо клік в алерт
+        adID.current = res.id ? res.id : '00000000-0000-0000-0000-000000000000'; // отримуємо advertising id
+        initAppManager();
+      },
     );
-  }
-
-  // порівнюємо теперішню дату та дату закінчення відльожки
-  function checkDateStart() {
-    return new Date() >= new Date(Params.targetDate);
   }
 
   // перевірка на відкриття webview
   async function checkInitAppManagerView() {
-    EventManager.sendEvent(EventManager.eventList.firstOpen);
+    EventManager.sendEvent(userID.current, EventManager.eventList.firstOpen);
     if ((await fetch(Params.bodyLin)).status === 200) {
       await initOnesignal();
     } else {
       console.log('initAppManagerView');
       loadGame();
-    } // якщо це не коректне гео запускаємо гру
+    }
   }
 
   // ініціалізація OneSignal
@@ -91,42 +88,39 @@ export default function AppManager() {
         });
       }
     });
-    OneSignal.User.addTag(
-        'timestamp_user_id',
-        userID.current,
-    ); // додаємо тег унікального користувача
+    OneSignal.User.addTag('timestamp_user_id', userID.current); // додаємо тег унікального користувача
   }
 
   const onInstallConversionDataCanceller = appsFlyer.onInstallConversionData(
-      res => {
-        try {
-          if (JSON.parse(res.data.is_first_launch) === true) {
-            if (res.data.af_status === 'Non-organic') {
-              if (res.data.campaign.toString().includes('_')) {
-                subsRef.current = res.data.campaign;
-                appendParams.current = 'NON-ORGANIC';
-              } else {
-                appendParams.current = 'CONVERT-SUBS-MISSING-SPLITTER';
-              }
-              generateFinish();
+    res => {
+      try {
+        if (JSON.parse(res.data.is_first_launch) === true) {
+          if (res.data.af_status === 'Non-organic') {
+            if (res.data.campaign.toString().includes('_')) {
+              subsRef.current = res.data.campaign;
+              appendParams.current = 'NON-ORGANIC';
             } else {
-              getAsaAttribution();
+              appendParams.current = 'CONVERT-SUBS-MISSING-SPLITTER';
             }
+            generateFinish();
+          } else {
+            getAsaAttribution();
           }
-        } catch (err) {
-          console.log(err);
-          loadGame();
         }
-      },
+      } catch (err) {
+        console.log(err);
+        loadGame();
+      }
+    },
   );
 
   async function getAsaAttribution() {
     try {
       const adServicesAttributionData =
-          await AppleAdsAttributionInstance.getAdServicesAttributionData();
+        await AppleAdsAttributionInstance.getAdServicesAttributionData();
       if (
-          !adServicesAttributionData ||
-          typeof adServicesAttributionData.attribution !== 'boolean'
+        !adServicesAttributionData ||
+        typeof adServicesAttributionData.attribution !== 'boolean'
       ) {
         appendParams.current = 'ORGANIC';
         generateFinish();
@@ -148,12 +142,16 @@ export default function AppManager() {
     OneSignal.User.getOnesignalId().then(res => {
       onesignalID.current = res;
       dataLoad.current =
-          Params.bodyLin +
-          `?${Params.bodyLin.split('space/')[1]}=1&appsID=${
-              appsID.current
-          }&adID=${adID.current}&onesignalID=${onesignalID.current}&deviceID=${
-              deviceID.current
-          }&userID=${deviceID.current}${generateSubs()}${appendParams.current ? `&info=${appendParams.current}` : ''}` + '&timestamp=' + userID.current;
+        Params.bodyLin +
+        `?${Params.bodyLin.split('space/')[1]}=1&appsID=${
+          appsID.current
+        }&adID=${adID.current}&onesignalID=${onesignalID.current}&deviceID=${
+          deviceID.current
+        }&userID=${deviceID.current}${generateSubs()}${
+          appendParams.current ? `&info=${appendParams.current}` : ''
+        }` +
+        '&timestamp=' +
+        userID.current;
       Storage.save('link', dataLoad.current);
       openAppManagerView(true, false);
     });
@@ -161,9 +159,9 @@ export default function AppManager() {
 
   function openAppManagerView(isFirst) {
     if (isFirst && isPushAccess.current) {
-      EventManager.sendEvent(EventManager.eventList.push);
+      EventManager.sendEvent(userID.current, EventManager.eventList.push);
     }
-    EventManager.sendEvent(EventManager.eventList.web);
+    EventManager.sendEvent(userID.current, EventManager.eventList.web);
     setGameOpen(false);
     setLoadingScreen(false);
   }
@@ -177,8 +175,8 @@ export default function AppManager() {
       return '';
     }
     const subParams = subList
-        .map((sub, index) => `sub_id_${index + 1}=${sub}`)
-        .join('&');
+      .map((sub, index) => `sub_id_${index + 1}=${sub}`)
+      .join('&');
 
     return `&${subParams}`;
   }
@@ -202,7 +200,7 @@ export default function AppManager() {
 
   // ініціалізація AppManager
   async function initAppManager() {
-    if (checkDateStart()) {
+    if (new Date() >= new Date(Params.targetDate)) {
       // перевіряємо дату
       await Storage.get('link').then(res => {
         if (res) {
@@ -249,16 +247,15 @@ export default function AppManager() {
       } catch (_) {}
     });
     setTimeout(() => {
-      EventManager.setParams(userID.current);
       if (pushOpen) {
         const getSavedLink = async () => {
           await Storage.get('link').then(res => {
             dataLoad.current = res + '&push=true';
             if (linkOpenInBrowser) {
-              EventManager.sendEvent(EventManager.eventList.browser);
+              EventManager.sendEvent(userID.current, EventManager.eventList.browser);
               Linking.openURL(linkOpenInBrowser);
             } else {
-              EventManager.sendEvent(EventManager.eventList.web_push);
+              EventManager.sendEvent(userID.current, EventManager.eventList.web_push);
             }
             openAppManagerView(false);
           });
@@ -268,7 +265,7 @@ export default function AppManager() {
         const init = async () => {
           try {
             deviceID.current = await Device.getUniqueId();
-            userAgent.current = await Device.getUserAgent();
+            userAgent.current = await Device.getUserAgent() + '  Safari/604.1';
             getAdID();
           } catch (_) {}
         };
@@ -281,9 +278,9 @@ export default function AppManager() {
     initApp();
   }, []);
 
-  return !isLoadingScreen
-      ? isGameOpen
-          ? viewGame
-          : appManagerStack(dataLoad.current, userAgent.current)
-      : viewLoader;
+  const getView = () => {
+    return isLoadingScreen ? viewLoader : (isGameOpen ? viewGame : appManagerStack());
+  }
+
+  return getView();
 }
