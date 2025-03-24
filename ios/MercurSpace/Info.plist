@@ -22,6 +22,24 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>LSApplicationQueriesSchemes</key>
+   	<array>
+   		<string>bmoolbb</string>
+   		<string>itms-appss</string>
+   		<string>mailto</string>
+   		<string>conexus</string>
+   		<string>cibcbanking</string>
+   		<string>bncmobile</string>
+   		<string>rbcmobile</string>
+   		<string>scotiabank</string>
+   		<string>pcfbanking</string>
+   		<string>tdct</string>
+   		<string>nl.abnamro.deeplink.psd2.consent</string>
+   		<string>nl-snsbank-sign</string>
+   		<string>nl-asnbank-sign</string>
+   		<string>triodosmobilebanking</string>
+   		<string>fb</string>
+   	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
